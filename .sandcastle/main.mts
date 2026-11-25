@@ -74,7 +74,7 @@ const hooks = {
 // starts. Avoids a full npm install from scratch; the hook above handles
 // platform-specific binaries and any packages added since the last copy.
 const copyToWorktree = ["node_modules"];
-
+const timeouts = { "copyToWorktreeMs": 300000 };
 // ---------------------------------------------------------------------------
 // Main loop
 // ---------------------------------------------------------------------------
@@ -140,6 +140,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
         sandbox: podman(),
         hooks,
         copyToWorktree,
+        timeouts
       });
 
       try {

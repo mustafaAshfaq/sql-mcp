@@ -2,7 +2,7 @@
   "name": "sql-mcp",
   "version": "1.0.0",
   "dependencies": {
-    "@ai-hero/sandcastle": "file:../../../ai-hero-sandcastle-0.14.0.tgz",
+    "@ai-hero/sandcastle": "0.14.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
