@@ -56,11 +56,7 @@ export function createApplication(
       let session = sessionId ? sessions.get(sessionId) : undefined;
 
       if (sessionId && !session) {
-        res.status(404).json({
-          jsonrpc: "2.0",
-          error: { code: -32001, message: "Session not found" },
-          id: null,
-        });
+        sendSessionNotFound(res);
         return;
       }
 
@@ -91,11 +87,7 @@ export function createApplication(
     const sessionId = getSessionId(req);
     const session = sessionId ? sessions.get(sessionId) : undefined;
     if (!session) {
-      res.status(404).json({
-        jsonrpc: "2.0",
-        error: { code: -32001, message: "Session not found" },
-        id: null,
-      });
+      sendSessionNotFound(res);
       return;
     }
 
@@ -160,6 +152,14 @@ async function createSession(
 function getSessionId(req: Request): string | undefined {
   const sessionId = req.get("mcp-session-id");
   return sessionId || undefined;
+}
+
+function sendSessionNotFound(res: Response): void {
+  res.status(404).json({
+    jsonrpc: "2.0",
+    error: { code: -32001, message: "Session not found" },
+    id: null,
+  });
 }
 
 async function expireIdleSessions(

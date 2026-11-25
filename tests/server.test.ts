@@ -71,6 +71,24 @@ describe("MCP HTTP application", () => {
     });
   });
 
+  it.each(["POST", "GET", "DELETE"])(
+    "returns the same error for an unknown session on %s",
+    async (method) => {
+      const address = httpServer.address();
+      if (!address || typeof address === "string") throw new Error("Missing address");
+      const response = await fetch(`http://127.0.0.1:${address.port}/mcp`, {
+        method,
+        headers: { "mcp-session-id": "unknown" },
+      });
+      expect(response.status).toBe(404);
+      await expect(response.json()).resolves.toEqual({
+        jsonrpc: "2.0",
+        error: { code: -32001, message: "Session not found" },
+        id: null,
+      });
+    },
+  );
+
   it("serves the four tools over a stateful Streamable HTTP session", async () => {
     const address = httpServer.address();
     if (!address || typeof address === "string") throw new Error("Missing address");

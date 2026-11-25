@@ -28,6 +28,14 @@ describe("validateReadOnlyQuery", () => {
       "'DELETE'",
     );
   });
+
+  it("handles nested comments and rejects unterminated comments", () => {
+    const query = "/* outer /* DELETE */ UPDATE */ SELECT 1 -- DROP\n";
+    expect(validateReadOnlyQuery(query)).toBe(query.trim());
+    expect(() => validateReadOnlyQuery("SELECT 1 /* outer /* inner */")).toThrow(
+      "Unterminated SQL comment",
+    );
+  });
 });
 
 describe("buildPagedQuery", () => {
@@ -65,5 +73,18 @@ describe("buildPagedQuery", () => {
     expect(() =>
       buildPagedQuery("SELECT TOP 5 PERCENT name FROM sys.tables", 10, 0),
     ).toThrow(/TOP PERCENT/i);
+  });
+
+  it("handles comments around TOP literals and modifiers", () => {
+    expect(
+      buildPagedQuery("SELECT TOP /* outer /* inner */ */ (5) -- note\n name FROM items", 10, 2),
+    ).toEqual({
+      query: "SELECT name FROM items\nORDER BY (SELECT NULL)\nOFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY",
+      limit: 3,
+      offset: 2,
+    });
+    expect(() =>
+      buildPagedQuery("SELECT TOP (5) /* note */ WITH /* nested */ TIES name FROM items", 10, 0),
+    ).toThrow(/TOP WITH TIES/i);
   });
 });

@@ -35,7 +35,30 @@ interface Token {
   depth: number;
   start: number;
   end: number;
-  number?: boolean;
+}
+
+function skipLineComment(query: string, start: number): number {
+  let index = start + 2;
+  while (index < query.length && query[index] !== "\n") index += 1;
+  return index;
+}
+
+function skipBlockComment(query: string, start: number): number {
+  let index = start + 2;
+  let depth = 1;
+  while (index < query.length && depth > 0) {
+    if (query[index] === "/" && query[index + 1] === "*") {
+      depth += 1;
+      index += 2;
+    } else if (query[index] === "*" && query[index + 1] === "/") {
+      depth -= 1;
+      index += 2;
+    } else {
+      index += 1;
+    }
+  }
+  if (depth > 0) throw new Error("Unterminated SQL comment");
+  return index;
 }
 
 function tokenize(query: string): Token[] {
@@ -52,26 +75,12 @@ function tokenize(query: string): Token[] {
     }
 
     if (character === "-" && next === "-") {
-      index += 2;
-      while (index < query.length && query[index] !== "\n") index += 1;
+      index = skipLineComment(query, index);
       continue;
     }
 
     if (character === "/" && next === "*") {
-      index += 2;
-      let commentDepth = 1;
-      while (index < query.length && commentDepth > 0) {
-        if (query[index] === "/" && query[index + 1] === "*") {
-          commentDepth += 1;
-          index += 2;
-        } else if (query[index] === "*" && query[index + 1] === "/") {
-          commentDepth -= 1;
-          index += 2;
-        } else {
-          index += 1;
-        }
-      }
-      if (commentDepth > 0) throw new Error("Unterminated SQL comment");
+      index = skipBlockComment(query, index);
       continue;
     }
 
@@ -137,7 +146,6 @@ function tokenize(query: string): Token[] {
         depth,
         start,
         end: index,
-        number: true,
       });
       continue;
     }
@@ -182,22 +190,9 @@ function skipTrivia(query: string, start: number): number {
     if (/\s/.test(query[index]!)) {
       index += 1;
     } else if (query[index] === "-" && query[index + 1] === "-") {
-      index += 2;
-      while (index < query.length && query[index] !== "\n") index += 1;
+      index = skipLineComment(query, index);
     } else if (query[index] === "/" && query[index + 1] === "*") {
-      index += 2;
-      let depth = 1;
-      while (index < query.length && depth > 0) {
-        if (query[index] === "/" && query[index + 1] === "*") {
-          depth += 1;
-          index += 2;
-        } else if (query[index] === "*" && query[index + 1] === "/") {
-          depth -= 1;
-          index += 2;
-        } else {
-          index += 1;
-        }
-      }
+      index = skipBlockComment(query, index);
     } else {
       break;
     }
